@@ -7,25 +7,28 @@
 exports.create=function(option){
 
   var id=0;
+  /*
+  settings 为参数及默认值
+  */
   var settings={
-    connect:{max:10,current:0},
-    timeout:{keepAlive:5000,firstShake:5000},
-    port:8100,
-    share:{},
-    dataMax:{text:2000,binary:2000*1000},
-    allowBinary:false,
-    onText:function(){},
-    onBinary:function(){},
-    onTextOK:function(){},
-    onBinaryOK:function(){},
-    onClose:function(){},
-    debug:true,
-    enableRule:{
-      text:{requireHead:false,joinMessage:false},
-      binary:{requireHead:false,joinMessage:false}
+    connect:{max:10,current:0}, //连接数:{最大,当前}
+    timeout:{keepAlive:5000,firstShake:5000}, //超时:{心跳包,ws协议升级握手}
+    port:8100, //端口号
+    share:{}, //各连接实例共享变量
+    dataMax:{text:2000,binary:2000*1000}, //一次消息允许发送的总数据长度不超过多少:{字符串:2000,二进制:2MB}
+    allowBinary:false, //是否允许客户端发送二进制数据
+    onText:function(){}, //接收到客户端的消息分片（字符串）时触发消息
+    onBinary:function(){}, //接收到客户端的消息分片（二进制）时触发消息
+    onTextOK:function(){}, //消息分片完全到达时触发，参数为完整消息字符串
+    onBinaryOK:function(){}, //消息分片完全到达时触发，参数为完整消息二进制数组
+    onClose:function(){}, //客户端主动断开连接时触发
+    debug:true, //是否输出调试信息
+    enableRule:{ //自定义规则，即websocket协议中未定义的规则
+      text:{requireHead:false,joinMessage:false}, //文本消息是否需要:{头\尾部标记,消息的最后一个分片到达时需要触发onTextOK事件}
+      binary:{requireHead:false,joinMessage:false} //二进制消息是否需要:{头\尾部标记,消息的最后一个分片到达时需要触发onBinaryOK事件}
     }
   };
-
+  //把option里定义的参数替换settings里的默认参数
   test(settings,option);
 
   function is(a,b){
@@ -38,6 +41,7 @@ exports.create=function(option){
           test(a[x],b[x]);
         else a[x]=b[x];
   }
+  //创建数据帧
   function makeFrame(FIN,Opcode,data){
     var f=[],l=data.length;
     f.push((FIN<<7)|Opcode);
@@ -50,6 +54,7 @@ exports.create=function(option){
            l&0xff);
     return Buffer.concat([new Buffer(f),data]);
   }
+  //读取数据帧
   function readFrame(data,data_buffer,client){
     Array.prototype.push.apply(data_buffer,data);
     var e=data_buffer,buf=[],len=e.length,i,begin,opcode=e[0]&15;
@@ -73,6 +78,7 @@ exports.create=function(option){
    data_buffer.splice(0,payload_len+begin);
    client.onReceived(new Buffer(buf),opcode);
   }
+  //写入数据帧
   function writeTextFrame(text,io,client){
     var msg=Array.prototype.slice.call(new Buffer(text));
     var frag=200;//数据片段的长度
@@ -186,7 +192,7 @@ exports.create=function(option){
       }catch(err){}
       io.end();
       settings.connect.current--;
-      console.log('Client #'+self.id+' exited `'+reason+'`');
+      log('Client #'+self.id+' exited `'+reason+'`');
       delete shaked;
       delete self;
       delete data_buffer;
