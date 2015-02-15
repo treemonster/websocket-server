@@ -77,6 +77,7 @@ exports.create=function(option){
    for(i=0;i<payload_len;i++)buf.push(e[i+begin]^maskkey[i%4]);
    data_buffer.splice(0,payload_len+begin);
    client.onReceived(new Buffer(buf),opcode);
+   if(data_buffer.length>0)readFrame([],data_buffer,client);
   }
   //写入数据帧
   function writeTextFrame(text,io,client){
