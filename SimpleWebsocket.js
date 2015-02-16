@@ -20,6 +20,8 @@ exports.create=function(option){
     onText:function(){}, //接收到客户端的消息分片（字符串）时触发消息
     onBinary:function(){}, //接收到客户端的消息分片（二进制）时触发消息
     onTextOK:function(){}, //消息分片完全到达时触发，参数为完整消息字符串
+    onTextHeader:function(){}, //文本消息头部到达时触发
+    onBinaryHeader:function(){}, //二进制消息头部到达时触发
     onBinaryOK:function(){}, //消息分片完全到达时触发，参数为完整消息二进制数组
     onClose:function(){}, //客户端主动断开连接时触发
     debug:true, //是否输出调试信息
@@ -102,6 +104,7 @@ exports.create=function(option){
   1 成功
   2 收到的内容为消息头
   3 收到的内容为消息尾
+  4 收到的内容为超短消息的消息头
   */
     var rule=settings.enableRule[type];
     if(!isContinue)len=0;len+=data.length;
@@ -126,7 +129,7 @@ exports.create=function(option){
       }));
       //如果是0数据的消息, 那么消息头即可表示一个完整的消息, 返回成功标记
       if(ph.nodata!==undefined){
-        return 1;
+        return 4;
       }
       //如果发送的头部不带boundary，则拒绝请求
       if(!ph.boundary)return 0;
@@ -136,7 +139,7 @@ exports.create=function(option){
     }else if(priv.STATUS===1){
       if(rule.joinMessage){
         if(type==='text' && data===priv.boundary+'--'){
-          callback(priv.data);
+          callback(priv.data,priv.type);
         }else priv.data.push(data);
       }else{
         if(data!==priv.boundary+'--')return 1;
@@ -145,6 +148,7 @@ exports.create=function(option){
         for(var x in priv)delete priv[x];
         priv.STATUS=0;
         priv.data=[];
+        priv.type=1;
         return 3;
       }
     }
@@ -154,7 +158,7 @@ exports.create=function(option){
   var handler=function(io){
     var shaked=false;
     var self={id:++id,share:settings.share};
-    var priv={STATUS:0,data:[]};
+    var priv={STATUS:0,data:[],type:1};
     var data_buffer=[];
     var type=1;
     var isEnd=false;
@@ -168,18 +172,21 @@ exports.create=function(option){
         break;
       case 1:
         type=1;
-        var check=checkData(e.toString(),isContinue,'text',priv,function(data){
-          settings.onTextOK.call(self,data.join(''));
+        var check=checkData(e.toString(),isContinue,'text',priv,function(data,type){
+          if(type===1){
+            settings.onTextOK.call(self,data.join(''));
+          }else{
+            settings.onBinaryOK.call(self,Buffer.concat(data));
+          }
         });
         if(!check)return self.end('发送的数据格式不正确');
         if(check===1)settings.onText.call(self,e.toString(),isContinue);
+        else if(check===2||check===4)settings.onTextHeader.call(self,e.toString(),isContinue);
         break;
       case 2:
         if(settings.allowBinary!==true)return self.end('不允许发送二进制数据');
-        type=2;
-        var check=checkData(e,isContinue,'binary',priv,function(data){
-          settings.onBinaryOK.call(self,data);
-        });
+        type=2;priv.type=2;
+        var check=checkData(e,isContinue,'binary',priv,function(data){});
         if(!check)return self.end('发送的数据格式不正确');
         if(check===1)settings.onBinary.call(self,e,isContinue);
         break;
