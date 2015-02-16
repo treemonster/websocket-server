@@ -95,11 +95,6 @@ exports.create=function(option){
     }
   }
   function log(msg){if(settings.debug)console.log(msg)}
-  var headType={
-    status:/^\-\-s (\d+)/,
-    msg:/^\-\-m (.+)/,
-    boundary:/^\-\-b (.+)/
-  };
   function checkData(data,isContinue,type,priv,callback){
   /*
   返回说明：
@@ -115,12 +110,19 @@ exports.create=function(option){
     if(priv.STATUS===0){
       //需要头部，如果发送的不是头部，则拒绝请求
       if(!/^(\-\-. .+(\n|$))+$/.test(data))return 0;
-      var head=data.split('\n'),ph={};
-      for(var i=0;i<head.length;i++){
-        if(headType.status.test(head[i]))ph.status=head[i].replace(headType.status,'$1');
-        else if(headType.msg.test(head[i]))ph.msg=head[i].replace(headType.msg,'$1');
-        else if(headType.boundary.test(head[i]))ph.boundary=head[i].replace(headType.boundary,'$1');
-      }
+      var ph={};
+      data.split('\n').every(function(head){
+        for(var type in this){
+          if(!this[type].test(head))continue;
+          ph[type]=head.replace(this[type],'$1');
+        }
+        return true;
+      }.bind({
+        //此处写需要处理的头部正则描述
+        status:/^\-\-s (\d+)/,
+        msg:/^\-\-m (.+)/,
+        boundary:/^\-\-b (.+)/
+      }));
       //如果发送的头部不带boundary，则拒绝请求
       if(!ph.boundary)return 0;
       for(var q in ph)priv[q]=ph[q];
