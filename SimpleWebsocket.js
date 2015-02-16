@@ -17,11 +17,10 @@ exports.create=function(option){
     share:{}, //各连接实例共享变量
     dataMax:{text:2000,binary:2000*1000}, //一次消息允许发送的总数据长度不超过多少:{字符串:2000,二进制:2MB}
     allowBinary:false, //是否允许客户端发送二进制数据
+    onHeader:function(){}, //消息头部到达时触发
     onText:function(){}, //接收到客户端的消息分片（字符串）时触发消息
     onBinary:function(){}, //接收到客户端的消息分片（二进制）时触发消息
     onTextOK:function(){}, //消息分片完全到达时触发，参数为完整消息字符串
-    onTextHeader:function(){}, //文本消息头部到达时触发
-    onBinaryHeader:function(){}, //二进制消息头部到达时触发
     onBinaryOK:function(){}, //消息分片完全到达时触发，参数为完整消息二进制数组
     onClose:function(){}, //客户端主动断开连接时触发
     debug:true, //是否输出调试信息
@@ -181,12 +180,13 @@ exports.create=function(option){
         });
         if(!check)return self.end('发送的数据格式不正确');
         if(check===1)settings.onText.call(self,e.toString(),isContinue);
-        else if(check===2||check===4)settings.onTextHeader.call(self,e.toString(),isContinue);
+        else if(check===2||check===4)settings.onHeader.call(self,e.toString(),isContinue);
         break;
       case 2:
         if(settings.allowBinary!==true)return self.end('不允许发送二进制数据');
-        type=2;priv.type=2;
-        var check=checkData(e,isContinue,'binary',priv,function(data){});
+        type=2;
+        priv.type=2;
+        var check=checkData(e,isContinue,'binary',priv);
         if(!check)return self.end('发送的数据格式不正确');
         if(check===1)settings.onBinary.call(self,e,isContinue);
         break;
