@@ -109,7 +109,7 @@ exports.create=function(option){
     if(!rule.requireHead)return 1;
     if(priv.STATUS===0){
       //需要头部，如果发送的不是头部，则拒绝请求
-      if(!/^(\-\-. .+(\n|$))+$/.test(data))return 0;
+      if(!/^(\-\-.( .+(\n|$))*)+$/.test(data))return 0;
       var ph={};
       data.split('\n').every(function(head){
         for(var type in this){
@@ -121,8 +121,13 @@ exports.create=function(option){
         //此处写需要处理的头部正则描述
         status:/^\-\-s (\d+)/,
         msg:/^\-\-m (.+)/,
-        boundary:/^\-\-b (.+)/
+        boundary:/^\-\-b (.+)/,
+        nodata:/^\-\-n/
       }));
+      //如果是0数据的消息, 那么消息头即可表示一个完整的消息, 返回成功标记
+      if(ph.nodata!==undefined){
+        return 1;
+      }
       //如果发送的头部不带boundary，则拒绝请求
       if(!ph.boundary)return 0;
       for(var q in ph)priv[q]=ph[q];
