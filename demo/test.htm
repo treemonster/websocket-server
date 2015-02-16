@@ -30,9 +30,14 @@ var ws=new WebSocket('ws://127.0.0.1:8100');
 ws.onclose=function(e){log('closed: '+e.reason)};
 ws.onopen=function(){
 	setInterval(function(){
+		//普通消息
 		var message=new msg;
 		message.create({boundary:'k'});
 		message.appendMsgBody('Keepalive');
+		queue.push(message);
+		//超短消息
+		var message=new msg;
+		message.create({n:''});
 		queue.push(message);
 	},2000);
 };
@@ -57,13 +62,13 @@ var msg=function(){};
 msg.prototype.create=function(option){
 	this.data=[];
 	for(var what in option){
-		this.data.push('--'+what.charAt(0)+' '+option[what]);
+		this.data.push('--'+what.charAt(0)+(option[what]?' ':'')+option[what]);
 		if(what==='boundary')this.boundary=option[what];
 	}
 };
 msg.prototype.appendMsgBody=function(what){this.data.push(what);};
 msg.prototype.send=function(socket){
-	this.data.push(this.boundary+'--');
+	if(this.boundary)this.data.push(this.boundary+'--');
 	this.data.every(function(what){
 		socket.send(what);
 		return true;
