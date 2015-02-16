@@ -96,7 +96,7 @@ exports.create=function(option){
     }
   }
   function log(msg){if(settings.debug)console.log(msg)}
-  function checkData(data,isContinue,type,priv,callback){
+  function checkData(data,isContinue,priv,datatype,callback){
   /*
   返回说明：
   0 拒绝请求，并断开连接
@@ -105,6 +105,7 @@ exports.create=function(option){
   3 收到的内容为消息尾
   4 收到的内容为超短消息的消息头
   */
+    var type=priv.type===1?'text':'binary';
     var rule=settings.enableRule[type];
     if(!isContinue)len=0;len+=data.length;
     if(len>settings.dataMax[type])return 0;
@@ -137,7 +138,7 @@ exports.create=function(option){
       return 2;
     }else if(priv.STATUS===1){
       if(rule.joinMessage){
-        if(type==='text' && data===priv.boundary+'--'){
+        if(datatype==='text' && data===priv.boundary+'--'){
           callback(priv.data,priv.type);
         }else priv.data.push(data);
       }else{
@@ -171,7 +172,7 @@ exports.create=function(option){
         break;
       case 1:
         type=1;
-        var check=checkData(e.toString(),isContinue,'text',priv,function(data,type){
+        var check=checkData(e.toString(),isContinue,priv,'text',function(data,type){
           if(type===1){
             settings.onTextOK.call(self,data.join(''));
           }else{
@@ -186,7 +187,7 @@ exports.create=function(option){
         if(settings.allowBinary!==true)return self.end('不允许发送二进制数据');
         type=2;
         priv.type=2;
-        var check=checkData(e,isContinue,'binary',priv);
+        var check=checkData(e,isContinue,priv,'binary');
         if(!check)return self.end('发送的数据格式不正确');
         if(check===1)settings.onBinary.call(self,e,isContinue);
         break;
