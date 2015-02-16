@@ -39,6 +39,13 @@ ws.onopen=function(){
 		var message=new msg;
 		message.create({n:''});
 		queue.push(message);
+		//二进制消息
+		var message=new msg;
+		message.create({boundary:'k'});
+		message.appendMsgBody(new Blob(['hello'],{type:'image/jpeg'}));
+		message.appendMsgBody(new Blob(['world'],{type:'image/jpeg'}));
+		queue.push(message);
+
 	},2000);
 };
 ws.onmessage=function(e){log(e.data)};
