@@ -184,15 +184,15 @@ exports.create=function(option){
         type=1;
         var check=checkData(e.toString(),isContinue,priv,'text',function(data,type){
           if(type===1){
-            settings.onTextOK.call(self,data.join(''),priv.header);
+            settings.onTextOK.call({socket:self},data.join(''),priv.header);
           }else{
-            settings.onBinaryOK.call(self,Buffer.concat(data),priv.header);
+            settings.onBinaryOK.call({socket:self},Buffer.concat(data),priv.header);
           }
         });
         if(!check)return self.end(FORMAT_ERROR);
-        if(check===1)settings.onText.call(self,e.toString(),isContinue);
+        if(check===1)settings.onText.call({socket:self},e.toString(),isContinue);
         else if(check===2||check===4){
-          settings.onHeader.call(self,priv.header,isContinue);
+          settings.onHeader.call({socket:self},priv.header,isContinue);
           priv.header={};
         }
         break;
@@ -202,10 +202,10 @@ exports.create=function(option){
         priv.type=2;
         var check=checkData(e,isContinue,priv,'binary');
         if(!check)return self.end(FORMAT_ERROR);
-        if(check===1)settings.onBinary.call(self,e,isContinue);
+        if(check===1)settings.onBinary.call({socket:self},e,isContinue);
         break;
       case 8:
-        settings.onClose.call(self,e.toString().substr(2),
+        settings.onClose.call({socket:self},e.toString().substr(2),
           e.readUInt16BE(0));
         self.end(CLIENT_DISCONNECTED);
         break;
@@ -219,7 +219,7 @@ exports.create=function(option){
       self.write(makeFrame(1,8,d));
       io.end();
       settings.connect.current--;
-      settings.onEnd.call(self);
+      settings.onEnd.call({socket:self});
       log('Client #'+self.id+' exited `'+reason+'`');
       delete shaked;
       delete self;
@@ -245,7 +245,7 @@ exports.create=function(option){
       }
       else{
         io.end();
-        settings.onEnd.call(self);
+        settings.onEnd.call({socket:self});
       }
     });
     io.on('data',function(e){
@@ -264,7 +264,7 @@ exports.create=function(option){
         shaked=true;
       }
     });
-    settings.onConnect.call(self);
+    settings.onConnect.call({socket:self});
     settings.connect.current++;
     if(settings.connect.current>settings.connect.max)end();
 
