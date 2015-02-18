@@ -182,11 +182,9 @@ exports.create=function(option){
         type=1;
         var check=checkData(e.toString(),isContinue,priv,'text',function(data,type){
           if(type===1){
-            catchError(settings.onTextOK,self,[data.join(''),priv.header]);
-            //settings.onTextOK.call(self,data.join(''),priv.header);
+            settings.onTextOK.call(self,data.join(''),priv.header);
           }else{
-            catchError(settings.onBinaryOK,self,[Buffer.concat(data),priv.header]);
-            //settings.onBinaryOK.call(self,Buffer.concat(data),priv.header);
+            settings.onBinaryOK.call(self,Buffer.concat(data),priv.header);
           }
         });
         if(!check)return self.end(FORMAT_ERROR);
