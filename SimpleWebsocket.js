@@ -133,22 +133,23 @@ exports.create=function(option){
       }
       //如果发送的头部不带boundary，则拒绝请求
       if(!ph.boundary)return 0;
-      for(var q in ph)priv[q]=ph[q];
+      priv.header=ph;
       priv.STATUS=1;
       return 2;
     }else if(priv.STATUS===1){
       if(rule.joinMessage){
-        if(datatype==='text' && data===priv.boundary+'--'){
+        if(datatype==='text' && data===priv.header.boundary+'--'){
           callback(priv.data,priv.type);
         }else priv.data.push(data);
       }else{
-        if(data!==priv.boundary+'--')return 1;
+        if(data!==priv.header.boundary+'--')return 1;
       }
-      if(data===priv.boundary+'--'){
+      if(data===priv.header.boundary+'--'){
         for(var x in priv)delete priv[x];
         priv.STATUS=0;
         priv.data=[];
         priv.type=1;
+        priv.header={};
         return 3;
       }
     }
@@ -158,7 +159,7 @@ exports.create=function(option){
   var handler=function(io){
     var shaked=false;
     var self={id:++id,share:settings.share};
-    var priv={STATUS:0,data:[],type:1};
+    var priv={STATUS:0,data:[],type:1,header:{}};
     var data_buffer=[];
     var type=1;
     var isEnd=false;
@@ -174,14 +175,14 @@ exports.create=function(option){
         type=1;
         var check=checkData(e.toString(),isContinue,priv,'text',function(data,type){
           if(type===1){
-            settings.onTextOK.call(self,data.join(''));
+            settings.onTextOK.call(self,data.join(''),priv.header);
           }else{
-            settings.onBinaryOK.call(self,Buffer.concat(data));
+            settings.onBinaryOK.call(self,Buffer.concat(data),priv.header);
           }
         });
         if(!check)return self.end('发送的数据格式不正确');
         if(check===1)settings.onText.call(self,e.toString(),isContinue);
-        else if(check===2||check===4)settings.onHeader.call(self,e.toString(),isContinue);
+        else if(check===2||check===4)settings.onHeader.call(self,priv.header,isContinue);
         break;
       case 2:
         if(settings.allowBinary!==true)return self.end('不允许发送二进制数据');
