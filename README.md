@@ -8,10 +8,19 @@ require('./SimpleWebsocket').create
   timeout:{keepAlive:5000,firstShake:5000}, //心跳包超时，连接握手超时
   onTextOK:function(text){ //消息分片全部到达时触发
     console.log(text);
-    this.write('OK,'+text.length+' charactors received, `'+text+'`');
+    /*
+    this.socket是当前用户websocket的实例，结构如下：
+    {
+      int id,                                 //该实例唯一标识
+      object share,                           //所有实例的共享对象
+      void write(data),                       //实例输出到客户端的方法，参数data接受：字符串/二进制流/数据帧
+      void end([string reason][,int code])    //断开当前连接
+    }
+    */
+    this.socket.write('OK,'+text.length+' charactors received, `'+text+'`');
   },
   onClose:function(reason,code){ //客户端主动关闭连接时触发
-    console.log(this.id);
+    console.log(this.socket.id);
   },
   debug:true, //debug为true时，simplewebsocket全部输出都会显示
   enableRule:{
