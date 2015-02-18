@@ -4,15 +4,17 @@
  * code by treemonster@ 2015.2.15
  * Git: https://github.com/treemonster/websocket-server
  */
-exports.create=function(option){
+exports.create=function(option,callback){
 
   const MASK_REQUIRED='客户端发送的数据帧必须使用掩码';
   const FORMAT_ERROR='发送的数据格式不正确';
   const BINARY_DISABLED='不允许发送二进制数据';
   const CLIENT_DISCONNECTED='客户端发出了断连请求';
   const UNKNOWN_ERROR='发生了未知错误';
+  const TIMEOUT='连接超时';
 
   var id=0;
+  var connections={};
   /*
   settings 为参数及默认值
   */
@@ -222,6 +224,7 @@ exports.create=function(option){
       settings.connect.current--;
       settings.onEnd.call(_self);
       log('Client #'+self.id+' exited `'+reason+'`');
+      delete connections[self.id];
       delete shaked;
       delete self;
       delete _self;
@@ -267,19 +270,21 @@ exports.create=function(option){
       }
     });
     settings.onConnect.call(_self);
+    connections[self.id]=self;
     settings.connect.current++;
-    if(settings.connect.current>settings.connect.max)end();
+    if(settings.connect.current>settings.connect.max)self.end();
 
     setTimeout(function(){
       if(!shaked)self.end();
       setTimeout(function(){
         if(new Date-lastUpdate>
           settings.timeout.keepAlive)
-          self.end('Timeout');
+          self.end(TIMEOUT);
         else setTimeout(arguments.callee,1000);
       },1000);
     },settings.timeout.firstShake);
 
   };
   require("net").createServer(handler).listen(settings.port);
+  return connections;
 };
