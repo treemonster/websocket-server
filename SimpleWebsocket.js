@@ -194,7 +194,7 @@ exports.create=function(option){
         if(check===1)settings.onText.call(_self,e.toString(),isContinue);
         else if(check===2||check===4){
           settings.onHeader.call(_self,priv.header,isContinue);
-          priv.header={};
+          if(check===4)priv.header={};
         }
         break;
       case 2:
