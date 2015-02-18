@@ -6,6 +6,12 @@
  */
 exports.create=function(option){
 
+  const MASK_REQUIRED='客户端发送的数据帧必须使用掩码';
+  const FORMAT_ERROR='发送的数据格式不正确';
+  const BINARY_DISABLED='不允许发送二进制数据';
+  const CLIENT_DISCONNECTED='客户端发出了断连请求';
+  const UNKNOWN_ERROR='未知错误';
+
   var id=0;
   /*
   settings 为参数及默认值
@@ -22,7 +28,8 @@ exports.create=function(option){
     onBinary:function(){}, //接收到客户端的消息分片（二进制）时触发消息
     onTextOK:function(){}, //消息分片完全到达时触发，参数为完整消息字符串
     onBinaryOK:function(){}, //消息分片完全到达时触发，参数为完整消息二进制数组
-    onClose:function(){}, //客户端主动断开连接时触发
+    onClose:function(){}, //客户端正常断开连接时触发
+    onEnd:function(){}, //客户端断开连接时触发，如果是客户端正常断开连接，则onEnd会在onClose之后触发
     debug:true, //是否输出调试信息
     enableRule:{ //自定义规则，即websocket协议中未定义的规则
       text:{requireHead:false,joinMessage:false}, //文本消息是否需要:{头\尾部标记,消息的最后一个分片到达时需要触发onTextOK事件}
@@ -59,7 +66,7 @@ exports.create=function(option){
   function readFrame(data,data_buffer,client){
     Array.prototype.push.apply(data_buffer,data);
     var e=data_buffer,buf=[],len=e.length,i,begin,opcode=e[0]&15;
-    if(!(e[1]>>7)){return client.end('客户端发送的数据帧必须使用掩码',1002);}
+    if(!(e[1]>>7)){return client.end(MASK_REQUIRED,1002);}
      switch(e[1]&127){
      case 126:
       payload_len=(e[2]<<8)+e[3];
@@ -180,22 +187,22 @@ exports.create=function(option){
             settings.onBinaryOK.call(self,Buffer.concat(data),priv.header);
           }
         });
-        if(!check)return self.end('发送的数据格式不正确');
+        if(!check)return self.end(FORMAT_ERROR);
         if(check===1)settings.onText.call(self,e.toString(),isContinue);
         else if(check===2||check===4)settings.onHeader.call(self,priv.header,isContinue);
         break;
       case 2:
-        if(settings.allowBinary!==true)return self.end('不允许发送二进制数据');
+        if(settings.allowBinary!==true)return self.end(BINARY_DISABLED);
         type=2;
         priv.type=2;
         var check=checkData(e,isContinue,priv,'binary');
-        if(!check)return self.end('发送的数据格式不正确');
+        if(!check)return self.end(FORMAT_ERROR);
         if(check===1)settings.onBinary.call(self,e,isContinue);
         break;
       case 8:
         settings.onClose.call(self,e.toString().substr(2),
           e.readUInt16BE(0));
-        self.end('客户端发出了断连请求');
+        self.end(CLIENT_DISCONNECTED);
         break;
       }
     };
@@ -209,6 +216,7 @@ exports.create=function(option){
       }catch(err){}
       io.end();
       settings.connect.current--;
+      settings.onEnd.call(self);
       log('Client #'+self.id+' exited `'+reason+'`');
       delete shaked;
       delete self;
@@ -225,9 +233,13 @@ exports.create=function(option){
       else io.write(data);
     };
     io.on('error',function(){
-      if(typeof self!=="undefined")
-        self.end('Unknown Error');
-      else io.end();
+      if(typeof self!=="undefined"){
+        self.end(UNKNOWN_ERROR);
+      }
+      else{
+        io.end();
+        settings.onEnd.call(self);
+      }
     });
     io.on('data',function(e){
       if(shaked){
