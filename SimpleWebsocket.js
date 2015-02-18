@@ -229,6 +229,8 @@ exports.create=function(option){
       try{
         if(data.constructor===String)
           writeTextFrame(data,io,self);
+        else if(data.constructor===Object)
+          writeTextFrame(JSON.stringify(data),io,self);
         else io.write(data);
       }catch(e){}
     };
