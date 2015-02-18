@@ -119,7 +119,7 @@ exports.create=function(option){
     if(!rule.requireHead)return 1;
     if(priv.STATUS===0){
       //需要头部，如果发送的不是头部，则拒绝请求
-      if(!/^(\-\-.( .+(\n|$))*)+$/.test(data))return 0;
+      if(!/^(\-\-.\s*( .+(\n|$))*)+$/.test(data))return 0;
       var ph={};
       data.split('\n').every(function(head){
         for(var type in this){
