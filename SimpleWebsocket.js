@@ -23,6 +23,7 @@ exports.create=function(option){
     share:{}, //各连接实例共享变量
     dataMax:{text:2000,binary:2000*1000}, //一次消息允许发送的总数据长度不超过多少:{字符串:2000,二进制:2MB}
     allowBinary:false, //是否允许客户端发送二进制数据
+    onConnect:function(){}, //新连接进入时触发
     onHeader:function(){}, //消息头部到达时触发
     onText:function(){}, //接收到客户端的消息分片（字符串）时触发消息
     onBinary:function(){}, //接收到客户端的消息分片（二进制）时触发消息
@@ -263,6 +264,7 @@ exports.create=function(option){
         shaked=true;
       }
     });
+    settings.onConnect.call(self);
     log('Client: #'+id+' connected\n');
     settings.connect.current++;
     if(settings.connect.current>settings.connect.max)end();
