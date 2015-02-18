@@ -265,7 +265,6 @@ exports.create=function(option){
       }
     });
     settings.onConnect.call(self);
-    log('Client: #'+id+' connected\n');
     settings.connect.current++;
     if(settings.connect.current>settings.connect.max)end();
 
