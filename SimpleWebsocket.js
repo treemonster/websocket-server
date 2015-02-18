@@ -136,6 +136,7 @@ exports.create=function(option){
       }));
       //如果是0数据的消息, 那么消息头即可表示一个完整的消息, 返回成功标记
       if(ph.nodata!==undefined){
+        priv.header=ph;
         return 4;
       }
       //如果发送的头部不带boundary，则拒绝请求
@@ -189,7 +190,10 @@ exports.create=function(option){
         });
         if(!check)return self.end(FORMAT_ERROR);
         if(check===1)settings.onText.call(self,e.toString(),isContinue);
-        else if(check===2||check===4)settings.onHeader.call(self,priv.header,isContinue);
+        else if(check===2||check===4){
+          settings.onHeader.call(self,priv.header,isContinue);
+          priv.header={};
+        }
         break;
       case 2:
         if(settings.allowBinary!==true)return self.end(BINARY_DISABLED);
