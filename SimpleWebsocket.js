@@ -64,7 +64,7 @@ exports.create=function(option){
     return Buffer.concat([new Buffer(f),data]);
   }
   //读取数据帧
-  function readFrame(data,data_buffer,client){
+  function readFrame(data,data_buffer,client,onReceived){
     Array.prototype.push.apply(data_buffer,data);
     var e=data_buffer,buf=[],len=e.length,i,begin,opcode=e[0]&15;
     if(!(e[1]>>7)){return client.end(MASK_REQUIRED,1002);}
@@ -85,8 +85,8 @@ exports.create=function(option){
    if(payload_len>len-begin)return false;
    for(i=0;i<payload_len;i++)buf.push(e[i+begin]^maskkey[i%4]);
    data_buffer.splice(0,payload_len+begin);
-   client.onReceived(new Buffer(buf),opcode);
-   if(data_buffer.length>0)readFrame([],data_buffer,client);
+   onReceived.call(client,new Buffer(buf),opcode);
+   if(data_buffer.length>0)readFrame([],data_buffer,client,onReceived);
   }
   //写入数据帧
   function writeTextFrame(text,io,client){
@@ -174,7 +174,7 @@ exports.create=function(option){
     var isEnd=false;
     var lastUpdate=new Date;
     var len=0;
-    self.onReceived=function(e,opcode,isContinue){
+    var onReceived=function(e,opcode,isContinue){
       lastUpdate=new Date;
       switch(opcode){
       case 0:
@@ -250,7 +250,7 @@ exports.create=function(option){
     });
     io.on('data',function(e){
       if(shaked){
-        readFrame(e,data_buffer,self);
+        readFrame(e,data_buffer,self,onReceived);
       }else{
         e.toString().replace(/Sec\-WebSocket\-Key\: (\S+)/,function(a,key){
           io.write([
