@@ -10,7 +10,7 @@ exports.create=function(option){
   const FORMAT_ERROR='发送的数据格式不正确';
   const BINARY_DISABLED='不允许发送二进制数据';
   const CLIENT_DISCONNECTED='客户端发出了断连请求';
-  const UNKNOWN_ERROR='未知错误';
+  const UNKNOWN_ERROR='发生了未知错误';
 
   var id=0;
   /*
@@ -182,9 +182,11 @@ exports.create=function(option){
         type=1;
         var check=checkData(e.toString(),isContinue,priv,'text',function(data,type){
           if(type===1){
-            settings.onTextOK.call(self,data.join(''),priv.header);
+            catchError(settings.onTextOK,self,[data.join(''),priv.header]);
+            //settings.onTextOK.call(self,data.join(''),priv.header);
           }else{
-            settings.onBinaryOK.call(self,Buffer.concat(data),priv.header);
+            catchError(settings.onBinaryOK,self,[Buffer.concat(data),priv.header]);
+            //settings.onBinaryOK.call(self,Buffer.concat(data),priv.header);
           }
         });
         if(!check)return self.end(FORMAT_ERROR);
@@ -209,11 +211,9 @@ exports.create=function(option){
     self.end=function(reason,code){
       if(isEnd)return;
       isEnd=true;
-      try{
-        var d=new Buffer('\0\0'+(reason||''));
-        d.writeUInt16BE(code||1000,0);
-        self.write(makeFrame(1,8,d));
-      }catch(err){}
+      var d=new Buffer('\0\0'+(reason||''));
+      d.writeUInt16BE(code||1000,0);
+      self.write(makeFrame(1,8,d));
       io.end();
       settings.connect.current--;
       settings.onEnd.call(self);
@@ -228,9 +228,11 @@ exports.create=function(option){
     };
     self.write=function(data){
       if(isEnd)return;
-      if(data.constructor===String)
-        writeTextFrame(data,io,self);
-      else io.write(data);
+      try{
+        if(data.constructor===String)
+          writeTextFrame(data,io,self);
+        else io.write(data);
+      }catch(e){}
     };
     io.on('error',function(){
       if(typeof self!=="undefined"){
