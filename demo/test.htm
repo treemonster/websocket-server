@@ -21,66 +21,65 @@ float:left;margin-top:10px;margin-left:10px;width:100px;height:30px;
 }
 </style>
 <div>
-	<button onclick='sendMessage()'>发送消息</button>
-	<div id='result'></div>
+  <button onclick='sendMessage()'>发送消息</button>
+  <div id='result'></div>
 </div>
 <script>
 var queue=[];//消息队列，以保证一个消息的发送是不可分割的
 var ws=new WebSocket('ws://127.0.0.1:8100');
 ws.onclose=function(e){log('closed: '+e.reason)};
 ws.onopen=function(){
-	setInterval(function(){
-		//普通消息
-		var message=new msg;
-		message.create({boundary:'k'});
-		message.appendMsgBody('Keepalive');
-		queue.push(message);
-		//超短消息
-		var message=new msg;
-		message.create({n:''});
-		queue.push(message);
-		//二进制消息
-		var message=new msg;
-		message.create({boundary:'k'});
-		message.appendMsgBody(new Blob(['hello'],{type:'image/jpeg'}));
-		message.appendMsgBody(new Blob(['world'],{type:'image/jpeg'}));
-		queue.push(message);
+  var message;
+  setInterval(function(){
 
-	},2000);
+    //普通消息
+    message=new msg;
+    message.create({boundary:'k'});
+    message.appendMsgBody('Keepalive');
+    queue.push(message);
+
+    //超短消息
+    message=new msg;
+    message.create({n:''});
+    queue.push(message);
+
+    //二进制消息
+    message=new msg;
+    message.create({boundary:'k'});
+    message.appendMsgBody(new Blob(['hello'],{type:'image/jpeg'}));
+    message.appendMsgBody(new Blob(['world'],{type:'image/jpeg'}));
+    queue.push(message);
+  },2000);
 };
 ws.onmessage=function(e){log(e.data)};
 log=function(e){result.insertAdjacentHTML('afterBegin',e+'<br/>')};
-
 setInterval(function(){
-	if(queue.length){
-		queue.shift().send(ws);
-	}
+  if(queue.length){
+    queue.shift().send(ws);
+  }
 },100);
-
 function sendMessage(){
-	var message=new msg;
-	message.create({boundary:'abcd'});
-	message.appendMsgBody('发送一个测试消息');
-	message.appendMsgBody('附加更多消息内容，使用\n换行');
-	queue.push(message);
+  var message=new msg;
+  message.create({boundary:'abcd'});
+  message.appendMsgBody('发送一个测试消息');
+  message.appendMsgBody('附加更多消息内容，使用\n换行');
+  queue.push(message);
 }
-
 var msg=function(){};
 msg.prototype.create=function(option){
-	this.data=[];
-	for(var what in option){
-		this.data.push('--'+what.charAt(0)+(option[what]?' ':'')+option[what]);
-		if(what==='boundary')this.boundary=option[what];
-	}
+  this.data=[];
+  for(var what in option){
+    this.data.push('--'+what.charAt(0)+(option[what]?' ':'')+option[what]);
+    if(what==='boundary')this.boundary=option[what];
+  }
 };
 msg.prototype.appendMsgBody=function(what){this.data.push(what);};
 msg.prototype.send=function(socket){
-	if(this.boundary)this.data.push(this.boundary+'--');
-	this.data.every(function(what){
-		socket.send(what);
-		return true;
-	});
-	delete this.data;
+  if(this.boundary)this.data.push(this.boundary+'--');
+  this.data.every(function(what){
+    socket.send(what);
+    return true;
+  });
+  delete this.data;
 };
-
 </script>
