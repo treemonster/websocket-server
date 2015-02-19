@@ -4,14 +4,15 @@ require('../SimpleWebsocket').create
   timeout:{keepAlive:5000,firstShake:5000},
   onTextOK:function(text){
     console.log(text);
+    this.socket.write('--b testboundary');
     this.socket.write('OK,'+text.length+' charactors received, `'+text+'`');
+    this.socket.write('testboundary--');
   },
   onBinaryOK:function(data){
     console.log(data);
+    this.socket.write('--b testboundary');
     this.socket.write('OK,'+data.length+' bytes received, `'+data+'`');
-  },
-  onTextHeader:function(text){
-    console.log(text);
+    this.socket.write('testboundary--');
   },
   onClose:function(reason,code){
     console.log(this.socket.id);
