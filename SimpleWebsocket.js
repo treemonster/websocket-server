@@ -251,6 +251,7 @@ exports.create=function(option,callback){
       else{
         io.end();
         settings.onEnd.call(_self);
+        for(var what in _self)delete _self[what];
       }
     });
     io.on('data',function(e){
