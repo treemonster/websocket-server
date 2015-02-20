@@ -219,7 +219,7 @@ exports.create=function(option,callback){
       isEnd=true;
       var d=new Buffer('\0\0'+(reason||''));
       d.writeUInt16BE(code||1000,0);
-      self.write(makeFrame(1,8,d));
+      self.write(makeFrame(1,8,d),true);
       io.end();
       settings.connect.current--;
       settings.onEnd.call(_self);
@@ -234,8 +234,8 @@ exports.create=function(option,callback){
       delete lastUpdate;
       delete len;
     };
-    self.write=function(data){
-      if(isEnd)return;
+    self.write=function(data,must){
+      if(isEnd && !must)return;
       try{
         if(data.constructor===String)
           writeTextFrame(data,io,self);
