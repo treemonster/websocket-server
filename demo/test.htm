@@ -31,18 +31,15 @@ ws.onclose=function(e){log('closed: '+e.reason)};
 ws.onopen=function(){
   var message;
   setInterval(function(){
-
     //普通消息
     message=new msg;
-    message.create({boundary:'k'});
+    message.create({boundary:'k'},true);
     message.appendMsgBody('Keepalive');
     queue.push(message);
-
     //超短消息
     message=new msg;
     message.create({n:''});
     queue.push(message);
-
     //二进制消息
     message=new msg;
     message.create({boundary:'k'});
@@ -66,12 +63,15 @@ function sendMessage(){
   queue.push(message);
 }
 var msg=function(){};
-msg.prototype.create=function(option){
+//如果需要回复，这发送的头部会带上--k 随机字符串，接收的回复会包含--r 这个随机字符串
+msg.prototype.create=function(option,needReply){
   this.data=[];
+  if(needReply)this.data.push('--k '+Math.random());
   for(var what in option){
     this.data.push('--'+what.charAt(0)+(option[what]?' ':'')+option[what]);
     if(what==='boundary')this.boundary=option[what];
   }
+  this.data=[this.data.join('\n')];
 };
 msg.prototype.appendMsgBody=function(what){this.data.push(what);};
 msg.prototype.send=function(socket){
