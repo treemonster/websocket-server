@@ -135,6 +135,8 @@ exports.create=function(option,callback){
         status:/^\-\-s (\d+)/,
         msg:/^\-\-m (.+)/,
         boundary:/^\-\-b (.+)/,
+        keep:/^\-\-k (.+)/,
+        replyKeep:/^\-\-r (.+)/,
         nodata:/^\-\-n/
       }));
       //如果是0数据的消息, 那么消息头即可表示一个完整的消息, 返回成功标记
@@ -219,7 +221,7 @@ exports.create=function(option,callback){
       isEnd=true;
       var d=new Buffer('\0\0'+(reason||''));
       d.writeUInt16BE(code||1000,0);
-      self.write(makeFrame(1,8,d),true);
+      self.write(makeFrame(1,8,d));
       io.end();
       settings.connect.current--;
       settings.onEnd.call(_self);
@@ -234,8 +236,8 @@ exports.create=function(option,callback){
       delete lastUpdate;
       delete len;
     };
-    self.write=function(data,must){
-      if(isEnd && !must)return;
+    self.write=function(data){
+      if(isEnd)return;
       try{
         if(data.constructor===String)
           writeTextFrame(data,io,self);
@@ -251,7 +253,6 @@ exports.create=function(option,callback){
       else{
         io.end();
         settings.onEnd.call(_self);
-        for(var what in _self)delete _self[what];
       }
     });
     io.on('data',function(e){
