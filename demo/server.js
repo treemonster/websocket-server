@@ -1,23 +1,47 @@
-require('../SimpleWebsocket').create
+var sendData=function(data,socket,keepString){
+  data=data||{};
+  socket.write(function(head){
+    var heads=[];
+    for(var what in head)
+      heads.push('--'+what.charAt(0)+' '+head[what]);
+    if(keepString!==undefined)heads.push('--r '+keepString);
+    return heads.join('\n');
+  }(data.header=data.header||{nodata:''}));
+  if(!data.header.boundary)return;
+  if(data.json||data.text){
+    socket.write(data.text||JSON.stringify(data.json));
+    socket.write(data.header.boundary+'--');
+  }
+};
+
+require('SimpleWebsocket').create
 ({
   port:8100,
   timeout:{keepAlive:5000,firstShake:5000},
-  onTextOK:function(text){
+  onTextOK:function(text,head){
     console.log(text);
-    this.socket.write('--b testboundary');
-    this.socket.write('OK,'+text.length+' charactors received, `'+text+'`');
-    this.socket.write('testboundary--');
+    sendData({
+      header:{
+        msg:'OK,'+text.length+' charactors received, `'+text+'`',
+        nodata:''
+      }
+    },this.socket,head.keep||undefined);
   },
-  onBinaryOK:function(data){
+  onBinaryOK:function(data,head){
     console.log(data);
-    this.socket.write('--b testboundary');
-    this.socket.write('OK,'+data.length+' bytes received, `'+data+'`');
-    this.socket.write('testboundary--');
+    sendData({
+      header:{
+        msg:'OK,'+data.length+' bytes received, `'+data+'`',
+        nodata:''
+      }
+    },this.socket,head.keep||undefined);
+  },
+  onHeader:function(text){
+    console.log(text);
   },
   onClose:function(reason,code){
-    console.log(this.socket.id);
+    console.log(this.id);
   },
-  debug:true,
   allowBinary:true,
   enableRule:{
     text:{
@@ -30,4 +54,6 @@ require('../SimpleWebsocket').create
     }
   }
 });
+
+
 
