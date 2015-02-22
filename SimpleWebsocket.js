@@ -137,10 +137,11 @@ exports.create=function(option,callback){
         boundary:/^\-\-b (.+)/,
         keep:/^\-\-k (.+)/,
         replyKeep:/^\-\-r (.+)/,
-        nodata:/^\-\-n/
+        nodata:/^\-\-n(.{0})/
       }));
       //如果是0数据的消息, 那么消息头即可表示一个完整的消息, 返回成功标记
       if(ph.nodata!==undefined){
+        ph.nodata=true;
         priv.header=ph;
         return 4;
       }
