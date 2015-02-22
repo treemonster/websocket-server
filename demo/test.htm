@@ -25,6 +25,10 @@ float:left;margin-top:10px;margin-left:10px;width:100px;height:30px;
   <div id='result'></div>
 </div>
 <script>
+var r=0,rnd=function(){
+  return Math.random()+(r++);
+};
+
 var queue=[];//消息队列，以保证一个消息的发送是不可分割的
 var ws=new WebSocket('ws://127.0.0.1:8100');
 ws.onclose=function(e){log('closed: '+e.reason)};
@@ -33,16 +37,20 @@ ws.onopen=function(){
   setInterval(function(){
     //普通消息
     message=new msg;
-    message.create({boundary:'k'},true);
-    message.appendMsgBody('Keepalive');
+    message.create({boundary:rnd()},true);
+    message.appendMsgBody(JSON.stringify({
+      point:[2334,34324],
+      msg:'test',
+      lng_lat:[23.234,432.23]
+    }));
     queue.push(message);
     //超短消息
     message=new msg;
-    message.create({n:''});
+    message.create({nodata:true});
     queue.push(message);
     //二进制消息
     message=new msg;
-    message.create({boundary:'k'});
+    message.create({boundary:rnd()});
     message.appendMsgBody(new Blob(['hello'],{type:'image/jpeg'}));
     message.appendMsgBody(new Blob(['world'],{type:'image/jpeg'}));
     queue.push(message);
@@ -57,7 +65,7 @@ setInterval(function(){
 },100);
 function sendMessage(){
   var message=new msg;
-  message.create({boundary:'abcd'});
+  message.create({boundary:rnd()});
   message.appendMsgBody('发送一个测试消息');
   message.appendMsgBody('附加更多消息内容，使用\n换行');
   queue.push(message);
