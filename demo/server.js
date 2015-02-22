@@ -30,7 +30,7 @@ var sendData=function(data,client,replyKeep){
   while(msg.length)socket.write(msg.shift());
 };
 
-require('SimpleWebsocket').create
+require('../SimpleWebsocket').create
 ({
   port:8100,
   timeout:{keepAlive:5000,firstShake:5000},
