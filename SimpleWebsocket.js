@@ -196,9 +196,9 @@ exports.create=function(option,callback){
           }
         });
         if(!check)return self.end(FORMAT_ERROR);
-        if(check===1)settings.onText.call(_self,e.toString(),isContinue);
+        if(check===1)settings.onText.call(_self,e.toString(),isContinue,priv.header);
         else if(check===2||check===4){
-          settings.onHeader.call(_self,priv.header,isContinue);
+          settings.onHeader.call(_self,priv.header);
           if(check===4)priv.header={};
         }
         break;
@@ -208,7 +208,7 @@ exports.create=function(option,callback){
         priv.type=2;
         var check=checkData(e,isContinue,priv,'binary');
         if(!check)return self.end(FORMAT_ERROR);
-        if(check===1)settings.onBinary.call(_self,e,isContinue);
+        if(check===1)settings.onBinary.call(_self,e,isContinue,priv.header);
         break;
       case 8:
         settings.onClose.call(_self,e.toString().substr(2),
