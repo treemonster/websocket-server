@@ -54,7 +54,7 @@ require('../SimpleWebsocket').create
     console.log(text);
   },
   onClose:function(reason,code){
-    console.log(this.id);
+    console.log(this.socket.id);
   },
   allowBinary:true,
   enableRule:{
