@@ -50,11 +50,11 @@ require('../SimpleWebsocket').create
       }
     },this,head.keep);
   },
-  onHeader:function(text){
-    console.log(text);
+  onHeader:function(head){
+    console.log(head);
   },
   onClose:function(reason,code){
-    console.log(this.socket.id);
+    console.log(this.socket.id,reason,code);
   },
   allowBinary:true,
   enableRule:{
