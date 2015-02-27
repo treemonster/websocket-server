@@ -212,7 +212,7 @@ exports.create=function(option,callback){
         break;
       case 8:
         settings.onClose.call(_self,e.toString().substr(2),
-          e.readUInt16BE(0));
+          e.length?e.readUInt16BE(0):'');
         self.end(CLIENT_DISCONNECTED);
         break;
       }
